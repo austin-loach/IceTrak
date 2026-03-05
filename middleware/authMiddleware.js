@@ -1,6 +1,10 @@
 const jwt = require('jsonwebtoken');
+const axios = require('axios');
+const qs = require('qs');
 
-const authMiddleware = (req, res, next) => {
+const YAHOO_TOKEN_URL = 'https://api.login.yahoo.com/oauth2/get_token';
+
+const authMiddleware = async (req, res, next) => {
   const authHeader = req.headers.authorization;
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
     return res.status(401).json({ error: 'Missing or invalid authorization header' });
@@ -9,7 +13,39 @@ const authMiddleware = (req, res, next) => {
   const token = authHeader.split(' ')[1];
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    req.user = decoded; // { userId, yahooAccessToken, yahooRefreshToken, tokenExpiry }
+
+    // Check if Yahoo token is expired (with 5 min buffer)
+    const isExpired = decoded.tokenExpiry && Date.now() > decoded.tokenExpiry - 5 * 60 * 1000;
+
+    if (isExpired && decoded.yahooRefreshToken) {
+      try {
+        const credentials = Buffer.from(
+          `${process.env.YAHOO_CLIENT_ID}:${process.env.YAHOO_CLIENT_SECRET}`
+        ).toString('base64');
+
+        const response = await axios.post(
+          YAHOO_TOKEN_URL,
+          qs.stringify({ grant_type: 'refresh_token', refresh_token: decoded.yahooRefreshToken }),
+          {
+            headers: {
+              Authorization: `Basic ${credentials}`,
+              'Content-Type': 'application/x-www-form-urlencoded',
+            },
+          }
+        );
+
+        decoded.yahooAccessToken = response.data.access_token;
+        decoded.tokenExpiry = Date.now() + response.data.expires_in * 1000;
+        if (response.data.refresh_token) {
+          decoded.yahooRefreshToken = response.data.refresh_token;
+        }
+      } catch (refreshErr) {
+        console.error('[Token Refresh Error]', refreshErr.message);
+        return res.status(401).json({ error: 'Token refresh failed, please log in again' });
+      }
+    }
+
+    req.user = decoded;
     next();
   } catch (err) {
     return res.status(401).json({ error: 'Invalid or expired token' });
