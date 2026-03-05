@@ -32,7 +32,10 @@ router.get('/leaders/skaters', async (req, res, next) => {
     const { category, limit } = req.query;
     const leaders = await nhlService.getSkaterLeaders(category || 'points', parseInt(limit) || 25);
     res.json({ leaders });
-  } catch (err) { next(err); }
+  } catch (err) {
+    console.error('[NHL Skaters Error]', err.message, err.response?.data);
+    next(err);
+  }
 });
 
 // GET /api/nhl/leaders/goalies
