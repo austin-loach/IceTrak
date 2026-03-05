@@ -15,7 +15,15 @@ router.get('/yahoo', (req, res) => {
     client_id: process.env.YAHOO_CLIENT_ID,
     redirect_uri: process.env.YAHOO_REDIRECT_URI,
     response_type: 'code',
-    scope: 'openid fspt-r fspt-w',
+    scope: 'openid fspt-r',
+```
+
+Then we need to push that change to Railway. Run:
+```
+cd C:\IceTrak\backend
+git add .
+git commit -m "Fix Yahoo OAuth scope"
+git push
   });
   res.redirect(`${YAHOO_AUTH_URL}?${params.toString()}`);
 });
