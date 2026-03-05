@@ -13,8 +13,6 @@ const authMiddleware = async (req, res, next) => {
   const token = authHeader.split(' ')[1];
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-
-    // Check if Yahoo token is expired (with 5 min buffer)
     const isExpired = decoded.tokenExpiry && Date.now() > decoded.tokenExpiry - 5 * 60 * 1000;
 
     if (isExpired && decoded.yahooRefreshToken) {
@@ -36,12 +34,14 @@ const authMiddleware = async (req, res, next) => {
 
         decoded.yahooAccessToken = response.data.access_token;
         decoded.tokenExpiry = Date.now() + response.data.expires_in * 1000;
-        if (response.data.refresh_token) {
-          decoded.yahooRefreshToken = response.data.refresh_token;
-        }
+        if (response.data.refresh_token) decoded.yahooRefreshToken = response.data.refresh_token;
+
+        // Mint a new JWT and send it back so the app can save it
+        const newToken = jwt.sign(decoded, process.env.JWT_SECRET, { expiresIn: '30d' });
+        res.setHeader('X-New-Token', newToken);
       } catch (refreshErr) {
         console.error('[Token Refresh Error]', refreshErr.message);
-        return res.status(401).json({ error: 'Token refresh failed, please log in again' });
+        return res.status(401).json({ error: 'Token refresh failed' });
       }
     }
 
