@@ -204,6 +204,14 @@ function parsePlayerStats(p) {
   };
 }
 
+async function getUserTeamInLeague(accessToken, leagueKey) {
+  const data = await yahooRequest(accessToken, `/league/${leagueKey}/teams;use_login=1`);
+  const teams = data?.fantasy_content?.league?.teams?.team;
+  if (!teams) return null;
+  const team = Array.isArray(teams) ? teams[0] : teams;
+  return { teamKey: team.team_key, teamId: team.team_id, name: team.name };
+}
+
 module.exports = {
   refreshYahooToken,
   getUserLeagues,
@@ -216,4 +224,5 @@ module.exports = {
   getPlayersForTrade,
   getLeagueSettings,
   getAllTeamStats,
+  getUserTeamInLeague,
 };

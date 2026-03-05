@@ -114,4 +114,12 @@ router.get('/league/:leagueKey/analyze', async (req, res, next) => {
   } catch (err) { next(err); }
 });
 
+// GET /api/yahoo/league/:leagueKey/myteam
+router.get('/league/:leagueKey/myteam', async (req, res, next) => {
+  try {
+    const team = await yahooService.getUserTeamInLeague(getToken(req), req.params.leagueKey);
+    res.json({ team });
+  } catch (err) { next(err); }
+});
+
 module.exports = router;
