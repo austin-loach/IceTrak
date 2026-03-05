@@ -65,33 +65,41 @@ async function getPlayerDetails(playerId) {
 
 // ─── Get skater stats leaders ─────────────────────────────────────────────────
 async function getSkaterLeaders(category = 'points', limit = 25) {
-  const { data } = await axios.get(`${NHL_STATS_BASE}/skater/summary`, {
-    params: {
-      limit,
-      start: 0,
-      sort: category,
-      direction: 'DESC',
-      seasonId: getCurrentSeasonId(),
-      gameTypeId: 2,
-    },
+  const { data } = await axios.get(`${NHL_BASE}/skater-stats-leaders/20252026/2`, {
+    params: { categories: category, limit },
   });
-  return data.data || [];
+  const categoryData = data[category] || data[Object.keys(data)[0]] || [];
+  return categoryData.map((p) => ({
+    playerId: p.id,
+    skaterFullName: `${p.firstName?.default} ${p.lastName?.default}`,
+    teamAbbrevs: p.teamAbbrevCode,
+    positionCode: p.position,
+    goals: p.goals,
+    assists: p.assists,
+    points: p.points,
+    plusMinus: p.plusMinus,
+    shots: p.shots,
+    value: p.value,
+  }));
 }
 
-// ─── Get goalie stats leaders ─────────────────────────────────────────────────
 async function getGoalieLeaders(limit = 25) {
-  const { data } = await axios.get(`${NHL_STATS_BASE}/goalie/summary`, {
-    params: {
-      limit,
-      start: 0,
-      sort: 'wins',
-      direction: 'DESC',
-      seasonId: getCurrentSeasonId(),
-      gameTypeId: 2,
-    },
+  const { data } = await axios.get(`${NHL_BASE}/goalie-stats-leaders/20252026/2`, {
+    params: { categories: 'wins', limit },
   });
-  return data.data || [];
+  const goalies = data['wins'] || data[Object.keys(data)[0]] || [];
+  return goalies.map((p) => ({
+    playerId: p.id,
+    goalieFullName: `${p.firstName?.default} ${p.lastName?.default}`,
+    teamAbbrevs: p.teamAbbrevCode,
+    wins: p.wins,
+    goalsAgainstAverage: p.goalsAgainstAverage,
+    savePct: p.savePct,
+    shutouts: p.shutouts,
+    value: p.value,
+  }));
 }
+
 
 // ─── Utility: current season ID ──────────────────────────────────────────────
 function getCurrentSeasonId() {
