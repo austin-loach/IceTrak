@@ -1,9 +1,7 @@
 const axios = require('axios');
 
 const NHL_BASE = 'https://api-web.nhle.com/v1';
-const NHL_STATS_BASE = 'https://api.nhle.com/stats/rest/en';
 
-// ─── Get current NHL standings ────────────────────────────────────────────────
 async function getStandings() {
   const { data } = await axios.get(`${NHL_BASE}/standings/now`);
   return data.standings.map((team) => ({
@@ -34,13 +32,11 @@ async function getStandings() {
   }));
 }
 
-// ─── Get today's schedule ─────────────────────────────────────────────────────
 async function getTodaySchedule() {
   const { data } = await axios.get(`${NHL_BASE}/schedule/now`);
   return data;
 }
 
-// ─── Get player details ───────────────────────────────────────────────────────
 async function getPlayerDetails(playerId) {
   const { data } = await axios.get(`${NHL_BASE}/player/${playerId}/landing`);
   return {
@@ -63,7 +59,6 @@ async function getPlayerDetails(playerId) {
   };
 }
 
-// ─── Get skater stats leaders ─────────────────────────────────────────────────
 async function getSkaterLeaders(category = 'points', limit = 25) {
   const { data } = await axios.get(`${NHL_BASE}/skater-stats-leaders/20252026/2`, {
     params: { categories: category, limit },
@@ -72,14 +67,14 @@ async function getSkaterLeaders(category = 'points', limit = 25) {
   return categoryData.map((p) => ({
     playerId: p.id,
     skaterFullName: `${p.firstName?.default} ${p.lastName?.default}`,
-    teamAbbrevs: p.teamAbbrevCode,
+    teamAbbrevs: p.teamAbbrev,
     positionCode: p.position,
     goals: p.goals,
     assists: p.assists,
-    points: p.points,
+    points: p.value,
     plusMinus: p.plusMinus,
     shots: p.shots,
-    value: p.value,
+    headshot: p.headshot,
   }));
 }
 
@@ -91,24 +86,13 @@ async function getGoalieLeaders(limit = 25) {
   return goalies.map((p) => ({
     playerId: p.id,
     goalieFullName: `${p.firstName?.default} ${p.lastName?.default}`,
-    teamAbbrevs: p.teamAbbrevCode,
+    teamAbbrevs: p.teamAbbrev,
     wins: p.wins,
     goalsAgainstAverage: p.goalsAgainstAverage,
     savePct: p.savePct,
     shutouts: p.shutouts,
-    value: p.value,
+    headshot: p.headshot,
   }));
-}
-
-
-// ─── Utility: current season ID ──────────────────────────────────────────────
-function getCurrentSeasonId() {
-  const now = new Date();
-  const year = now.getFullYear();
-  const month = now.getMonth() + 1;
-  // NHL season starts in October
-  if (month >= 10) return `${year}${year + 1}`;
-  return `${year - 1}${year}`;
 }
 
 module.exports = {
